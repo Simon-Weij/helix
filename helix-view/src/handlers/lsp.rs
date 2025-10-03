@@ -246,6 +246,19 @@ impl Editor {
                 });
                 if !ignore_if_exists || !path.exists() {
                     self.create_path(path, false)?;
+                    // Create directory if it does not exist
+                    if let Some(dir) = path.parent() {
+                        if !dir.is_dir() {
+                            fs::create_dir_all(dir)?;
+                        }
+                    }
+
+                    fs::write(path, [])?;
+                    if !cfg!(any(target_os = "linux", target_os = "android")) {
+                        self.language_servers
+                            .file_event_handler
+                            .file_changed(path.to_path_buf());
+                    }
                 }
             }
             ResourceOp::Delete(op) => {
@@ -264,6 +277,26 @@ impl Editor {
                     .and_then(|options| options.recursive)
                     .unwrap_or(false);
                 self.delete_path(path, recursive)?;
+                if path.is_dir() {
+                    let recursive = op
+                        .options
+                        .as_ref()
+                        .and_then(|options| options.recursive)
+                        .unwrap_or(false);
+
+                    if recursive {
+                        fs::remove_dir_all(path)?
+                    } else {
+                        fs::remove_dir(path)?
+                    }
+                } else if path.is_file() {
+                    fs::remove_file(path)?;
+                    if !cfg!(any(target_os = "linux", target_os = "android")) {
+                        self.language_servers
+                            .file_event_handler
+                            .file_changed(path.to_path_buf());
+                    }
+                }
             }
             ResourceOp::Rename(op) => {
                 let from_uri = Uri::try_from(&op.old_uri)?;
