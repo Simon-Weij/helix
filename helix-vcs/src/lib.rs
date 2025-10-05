@@ -57,8 +57,13 @@ impl DiffProviderRegistry {
                     log::debug!("failed to obtain current head name for {}", file.display());
                     None
                 }
-            }
-        })
+            })
+    }
+
+    pub fn needs_reload(&self, fs_event: &helix_core::file_watcher::Event) -> bool {
+        self.providers
+            .iter()
+            .any(|provider| provider.needs_reload(fs_event))
     }
 
     /// Fire-and-forget changed file iteration. Runs everything in a background task. Keeps
@@ -107,7 +112,15 @@ enum DiffProvider {
 }
 
 impl DiffProvider {
-    fn get_diff_base(&self, file: &Path, trust_full: bool) -> Result<Vec<u8>> {
+    pub fn needs_reload(&self, fs_event: &helix_core::file_watcher::Event) -> bool {
+        match self {
+            #[cfg(feature = "git")]
+            DiffProvider::Git => fs_event.path.as_std_path().ends_with(".git/HEAD"),
+            DiffProvider::None => false,
+        }
+    }
+
+    fn get_diff_base(&self, file: &Path) -> Result<Vec<u8>> {
         match self {
             #[cfg(feature = "git")]
             Self::Git => git::get_diff_base(file, trust_full),
