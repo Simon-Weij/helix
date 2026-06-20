@@ -1617,6 +1617,7 @@ impl Component for EditorView {
             Event::FocusGained => {
                 helix_event::dispatch(TerminalFocusGained { cx: &mut cx });
                 self.terminal_focused = true;
+                crate::handlers::auto_reload::on_focus_gained(context.editor);
                 EventResult::Consumed(None)
             }
             Event::FocusLost => {
