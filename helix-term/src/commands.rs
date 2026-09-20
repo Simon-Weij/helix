@@ -2710,7 +2710,7 @@ fn global_search(cx: &mut Context) {
 
                             Ok(!stop)
                         });
-                        let doc = documents.iter().find(|&(doc_path, _)| {
+                        let doc = documents.iter().find(|&(doc_path, _): &&(Option<PathBuf>, Rope)| {
                             doc_path
                                 .as_ref()
                                 .is_some_and(|doc_path| doc_path == entry.path())
@@ -2880,7 +2880,7 @@ fn local_search_grep(cx: &mut Context) {
 
         // Only read the current document (not other documents opened in the buffer)
         let doc = doc!(editor);
-        let documents = vec![(doc.path().cloned(), doc.text().to_owned())];
+        let documents = vec![(doc.path().map(|p| p.to_path_buf()), doc.text().to_owned())];
 
         let matcher = match RegexMatcherBuilder::new()
             .case_smart(config.smart_case)
@@ -2961,7 +2961,7 @@ fn local_search_grep(cx: &mut Context) {
 
                             Ok(!stop)
                         });
-                        let doc = documents.iter().find(|&(doc_path, _)| {
+                        let doc = documents.iter().find(|&(doc_path, _): &&(Option<PathBuf>, Rope)| {
                             doc_path
                                 .as_ref()
                                 .is_some_and(|doc_path| doc_path == entry.path())
@@ -3073,7 +3073,7 @@ fn local_search_fuzzy(cx: &mut Context) {
 
     let file_contents = std::fs::read_to_string(current_document_path).unwrap();
 
-    let current_document_path = std::sync::Arc::new(current_document_path.clone());
+    let current_document_path = std::sync::Arc::new(current_document_path.to_path_buf());
 
     let file_results: Vec<FileResult> = file_contents
         .lines()
