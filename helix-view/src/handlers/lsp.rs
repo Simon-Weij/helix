@@ -1,6 +1,7 @@
 use std::collections::btree_map::Entry;
 use std::collections::HashSet;
 use std::fmt::Display;
+use std::fs;
 
 use crate::editor::Action;
 use crate::events::{
