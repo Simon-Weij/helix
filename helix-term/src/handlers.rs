@@ -68,7 +68,6 @@ pub fn setup(config: Arc<ArcSwap<Config>>) -> Handlers {
     document_links::register_hooks(&handlers);
     prompt::register_hooks(&handlers);
     workspace_trust::register_hooks(&handlers);
-    auto_reload::register_hooks(&config.load().editor);
     auto_reload::register_hooks(&handlers, &config.load().editor);
     handlers
 }

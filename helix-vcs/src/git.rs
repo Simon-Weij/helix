@@ -93,6 +93,13 @@ pub fn for_each_changed_file(
     status(&open_repo(cwd, trust_full)?.to_thread_local(), f)
 }
 
+pub fn get_head_path(path: &Path) -> Option<PathBuf> {
+    let repo = open_repo(path, false).ok()?.to_thread_local();
+    let git_dir = repo.git_dir();
+    let head_path = git_dir.join("HEAD");
+    head_path.exists().then_some(head_path)
+}
+
 fn open_repo(path: &Path, trust_full: bool) -> Result<ThreadSafeRepository> {
     // `trust_full` is the workspace-trust decision made by the caller, and it must be the
     // authority on the gix trust level. gix's own discovery (`discover_*`) ignores a

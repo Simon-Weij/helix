@@ -440,6 +440,9 @@ pub struct Config {
     pub enable_steel: bool,
     /// Workspace-trust configuration.
     pub workspace_trust: WorkspaceTrustConfig,
+
+    pub auto_reload: AutoReloadConfig,
+    pub file_watcher: file_watcher::Config,
 }
 
 /// User-facing configuration for `[editor.workspace-trust]`.
@@ -517,8 +520,6 @@ impl Config {
                 .right
                 .contains(&StatusLineElement::CodeActionHint)
     }
-    pub auto_reload: AutoReloadConfig,
-    pub file_watcher: file_watcher::Config,
 }
 
 #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, Clone, Copy)]
@@ -1404,6 +1405,8 @@ pub struct Editor {
     pub mouse_down_range: Option<Range>,
     pub cursor_cache: CursorCache,
 
+    pub file_watcher: Watcher,
+
     pub editor_clipping: ClippingConfiguration,
 
     pub workspace_trust: WorkspaceTrust,
@@ -1415,7 +1418,6 @@ pub struct ClippingConfiguration {
     pub bottom: Option<u16>,
     pub left: Option<u16>,
     pub right: Option<u16>,
-    pub file_watcher: Watcher,
 }
 
 pub type Motion = Box<dyn Fn(&mut Editor)>;
@@ -1553,7 +1555,6 @@ impl Editor {
             dir_stack: VecDeque::with_capacity(DIR_STACK_CAP),
             workspace_trust,
             file_watcher: Watcher::new(&conf.file_watcher),
-            file_watcher,
         }
     }
 
@@ -2338,7 +2339,7 @@ impl Editor {
         let path = path.map(|path| path.into());
         let doc = doc_mut!(self, &doc_id);
         // the path that will be written: the override, else the document's own path
-        let save_path = path.clone().or_else(|| doc.path().cloned());
+        let save_path = path.clone().or_else(|| doc.path().map(|p| p.to_path_buf()));
         let doc_save_future = doc.save(path, force)?;
 
         // When a file is written to, notify the file event handler, unless the
